@@ -1,0 +1,13 @@
+@ProjetoCrud_HostAddress = http://localhost:5251
+
+### Criar um novo Lead
+POST {{ProjetoCrud_HostAddress}}/api/leads
+Content-Type: application/json
+
+{
+  "externalId": "hubspot_123",
+  "name": "Valdir via HTTP File",
+  "email": "valdir.http@gmail.com",
+  "sourceSystem": "HubSpot",
+  "status": "Novo"
+}
