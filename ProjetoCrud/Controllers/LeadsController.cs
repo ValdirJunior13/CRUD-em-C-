@@ -1,9 +1,8 @@
-// Arquivo: Controllers/LeadsController.cs
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // Necessário para os métodos Async do EF (ex: ToListAsync)
+using Microsoft.EntityFrameworkCore;
 using ProjetoCrud.Data;
 using ProjetoCrud.Model;
+using ProjetoCrud.DTOs;
 
 namespace LeadSyncApi.Controllers
 {
@@ -17,12 +16,11 @@ namespace LeadSyncApi.Controllers
         {
             _context = context;
         }
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Lead>>> GetLeads([FromQuery] string status = null)
-        {
-    
-            var query = _context.Leads.AsQueryable(); 
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<LeadResponseDto>>> GetLeads([FromQuery] string status = null)
+        {
+            var query = _context.Leads.AsQueryable(); 
 
             if (!string.IsNullOrWhiteSpace(status))
             {
@@ -30,11 +28,21 @@ namespace LeadSyncApi.Controllers
             }
 
             var leads = await query.ToListAsync(); 
-            return Ok(leads); 
+
+            var response = leads.Select(l => new LeadResponseDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                Email = l.Email,
+                Status = l.Status,
+                SourceSystem = l.SourceSystem
+            });
+
+            return Ok(response); 
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Lead>> GetLead(int id)
+        public async Task<ActionResult<LeadResponseDto>> GetLead(int id)
         {
             var lead = await _context.Leads.FindAsync(id);
 
@@ -43,52 +51,75 @@ namespace LeadSyncApi.Controllers
                 return NotFound(); 
             }
 
-            return Ok(lead);
+            var responseDto = new LeadResponseDto
+            {
+                Id = lead.Id,
+                Name = lead.Name,
+                Email = lead.Email,
+                Status = lead.Status,
+                SourceSystem = lead.SourceSystem
+            };
+
+            return Ok(responseDto);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Lead>> CreateLead(Lead lead)
+        public async Task<ActionResult<LeadResponseDto>> CreateLead(CreateLeadDto leadDto)
         {
-
-            var emailExists = await _context.Leads.AnyAsync(l => l.Email == lead.Email);
+            var emailExists = await _context.Leads.AnyAsync(l => l.Email == leadDto.Email);
             if (emailExists)
             {
                 return Conflict(new { message = "Um lead com este e-mail já existe." }); 
             }
-            lead.CreatedAt = DateTime.UtcNow;
 
-            _context.Leads.Add(lead); 
+            var novoLead = new Lead
+            {
+                Name = leadDto.Name,
+                Email = leadDto.Email,
+                SourceSystem = leadDto.SourceSystem,
+                Status = "Novo", 
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Leads.Add(novoLead); 
             await _context.SaveChangesAsync(); 
-            return CreatedAtAction(nameof(GetLead), new { id = lead.Id }, lead);
+
+            var responseDto = new LeadResponseDto
+            {
+                Id = novoLead.Id,
+                Name = novoLead.Name,
+                Email = novoLead.Email,
+                Status = novoLead.Status,
+                SourceSystem = novoLead.SourceSystem
+            };
+
+            return CreatedAtAction(nameof(GetLead), new { id = novoLead.Id }, responseDto);
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult<Lead>> UpdateLead(int id, Lead leadAtualizado)
+        public async Task<IActionResult> UpdateLead(int id, UpdateLeadDto leadDto)
         {
-           if(id != leadAtualizado.Id)
-            {
-                return BadRequest(new {message = "O Id da URL não corresponde ao solicitado"});
-            }
-
             var leadExistente = await _context.Leads.FindAsync(id);
-            if(leadExistente == null)
+            if (leadExistente == null)
             {
                 return NotFound();
             }
 
-            leadExistente.Name = leadAtualizado.Name;
-        leadExistente.Status = leadAtualizado.Status;
+            leadExistente.Name = leadDto.Name;
+            leadExistente.Status = leadDto.Status;
         
-        try{
-            await _context.SaveChangesAsync();
-        }catch (DbUpdateException){
-            return StatusCode(500, "Erro ao atualizar o banco de dados");
+            try 
+            {
+                await _context.SaveChangesAsync();
+            } 
+            catch (DbUpdateException) 
+            {
+                return StatusCode(500, "Erro ao atualizar o banco de dados");
+            }
 
-        }
-        return NoContent();
+            return NoContent();
         }
 
-        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLead(int id)
         {
@@ -99,7 +130,6 @@ namespace LeadSyncApi.Controllers
             }
 
             _context.Leads.Remove(lead);
-            
             await _context.SaveChangesAsync();
 
             return NoContent();
