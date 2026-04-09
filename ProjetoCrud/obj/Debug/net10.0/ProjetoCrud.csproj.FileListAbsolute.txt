@@ -72,3 +72,4 @@ C:\Users\Valdir Junior\OneDrive\Documentos\CRUD em C#\ProjetoCrud\bin\Debug\net1
 C:\Users\Valdir Junior\OneDrive\Documentos\CRUD em C#\ProjetoCrud\bin\Debug\net10.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Valdir Junior\OneDrive\Documentos\CRUD em C#\ProjetoCrud\bin\Debug\net10.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\Valdir Junior\OneDrive\Documentos\CRUD em C#\ProjetoCrud\bin\Debug\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
+C:\Users\Valdir Junior\OneDrive\Documentos\CRUD em C#\ProjetoCrud\obj\Debug\net10.0\ProjetoCrud.sourcelink.json
